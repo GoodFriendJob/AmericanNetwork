@@ -54,16 +54,14 @@ body {
 
 .main-nav {
   display: flex;
-  margin: 16px;
-  border-radius: 18px;
+  margin: 0 0 20px;
   color: #fff;
-  padding: 0.72rem 1rem;
+  padding: 10px 0;
   background:
     linear-gradient(135deg, rgba(12, 24, 54, 0.95), rgba(23, 48, 97, 0.92)),
     url("../img/mesh.svg");
-  border: 1px solid rgba(255, 255, 255, 0.16);
   position: sticky;
-  top: 10px;
+  top:0;
   z-index: 20;
   backdrop-filter: blur(8px);
 }
@@ -347,14 +345,12 @@ body {
   min-width: 0;
 }
 
-.general-categories,
+.general-categories {
+  padding: 0 0 10px;
+}
 .sports-categories,
 .sports-subcategories {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: thin;
+  padding: 10px 0 0;
 }
 
 .general-tab,

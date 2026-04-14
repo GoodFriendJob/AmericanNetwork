@@ -89,15 +89,31 @@ if (editProfileBtn) editProfileBtn.addEventListener("click", () => setAppStage("
 
 const avatarInput = document.getElementById("profile-avatar-input");
 const avatarDisplay = document.getElementById("profile-avatar");
+const defaultAvatarSrc = "assets/img/default-avatar.svg";
+
+function applyAvatarImage(imageSrc) {
+  if (!avatarDisplay) return;
+  avatarDisplay.style.backgroundImage = `url("${imageSrc}")`;
+  avatarDisplay.textContent = "";
+  avatarDisplay.classList.add("has-image");
+}
+
+function applyDefaultAvatar() {
+  applyAvatarImage(defaultAvatarSrc);
+}
+
 if (avatarInput && avatarDisplay) {
+  applyDefaultAvatar();
+
   avatarInput.addEventListener("change", (e) => {
     const file = e.target.files && e.target.files[0];
-    if (!file) return;
+    if (!file || !file.type.startsWith("image/")) {
+      applyDefaultAvatar();
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      avatarDisplay.style.backgroundImage = `url(${ev.target.result})`;
-      avatarDisplay.textContent = "";
-      avatarDisplay.classList.add("has-image");
+      applyAvatarImage(ev.target.result);
     };
     reader.readAsDataURL(file);
   });
