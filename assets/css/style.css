@@ -579,6 +579,14 @@ input:focus {
     url("../img/mesh.svg");
 }
 
+.sample-media-image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  object-fit: cover;
+}
+
 .post-rating {
   margin-top: 10px;
   display: flex;
