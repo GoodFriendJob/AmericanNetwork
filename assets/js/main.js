@@ -8,11 +8,16 @@ function setAppStage(stage) {
 
 const params = new URLSearchParams(window.location.search);
 setAppStage(params.get("stage") === "profile" ? "profile" : "main");
+const primaryViewSelect = document.getElementById("primary-view-select");
 
 function setView(view) {
   document.querySelectorAll(".main-nav .nav-link[data-view]").forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.view === view);
   });
+
+  if (primaryViewSelect) {
+    primaryViewSelect.value = view;
+  }
 
   document.querySelectorAll("[data-view]").forEach((el) => {
     if (el === appShell || el === profileShell) return;
@@ -29,6 +34,14 @@ document.querySelectorAll(".main-nav .nav-link[data-view]").forEach((btn) => {
     setView(view);
   });
 });
+
+if (primaryViewSelect) {
+  primaryViewSelect.addEventListener("change", (event) => {
+    const view = event.target.value || "general";
+    setAppStage("main");
+    setView(view);
+  });
+}
 setView("general");
 
 const profileForm = document.getElementById("profile-form");
@@ -89,7 +102,7 @@ if (editProfileBtn) editProfileBtn.addEventListener("click", () => setAppStage("
 
 const avatarInput = document.getElementById("profile-avatar-input");
 const avatarDisplay = document.getElementById("profile-avatar");
-const defaultAvatarSrc = "assets/img/default-avatar.svg";
+const defaultAvatarSrc = "https://randomuser.me/api/portraits/men/32.jpg";
 
 function applyAvatarImage(imageSrc) {
   if (!avatarDisplay) return;

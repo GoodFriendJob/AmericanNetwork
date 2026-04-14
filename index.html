@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8R2A2f1zM7rGx1nE2f3zYf2Qp8f+4Kw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/brand-logo.svg" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 
@@ -22,36 +23,35 @@
 
   <!-- HEADER -->
   <header class="main-nav gradient-mesh">
-    <div class="constitution-banner">Constitution • We the People</div>
-
     <div class="header-brand">
       <div class="brand-logo">
-        <div class="constitution-image" aria-hidden="true"></div>
+        <img class="constitution-image" src="assets/img/brand-logo.svg" alt="All America Atlantic logo" />
       </div>
 
-      <nav class="main-nav" aria-label="Primary">
-        <button class="nav-link is-active" type="button" data-view="general">All American Network</button>
-        <button class="nav-link" type="button" data-view="sports">All American Sports</button>
-        <button class="nav-link" type="button" data-view="dating">All American Dating</button>
-        <button class="nav-link" type="button" data-view="classifieds">All American Classifieds</button>
+      <nav class="primary-nav-dropdown" aria-label="Primary">
+        <label class="sr-only" for="primary-view-select">Choose section</label>
+        <select id="primary-view-select" class="primary-view-select" aria-label="Choose a section">
+          <option value="general" selected>All American Network</option>
+          <option value="sports">All American Sports</option>
+          <option value="dating">All American Dating</option>
+          <option value="classifieds">All American Classifieds</option>
+        </select>
       </nav>
-
-      <div class="brand-mark">AAA</div>
 
       <nav class="secondary-nav" aria-label="Secondary">
         <a href="about.html" class="nav-link">About</a>
       </nav>
 
       <div class="brand-text">
-        <p class="brand-super">All American • Best of the Best in Every Category</p>
-        <h1 class="brand-title">All America Atlantic</h1>
-        <p class="brand-tagline">Become an All American. Truth, character, and excellence in every lane.</p>
+        <p class="brand-super">Social platform for becoming the best of the best</p>
+        <h1 class="brand-title">All-American Network</h1>
+        <p class="brand-tagline">Sports, coding, video, writing, storytelling, leadership, and service - your All-American adventure starts today.</p>
       </div>
     </div>
 
     <div class="header-actions">
-      <button class="btn btn-ghost" type="button">🏅 Daily Goal</button>
-      <button class="btn btn-primary" type="button">+ New Highlight</button>
+      <button class="btn btn-ghost" type="button">Set Daily Mission</button>
+      <button class="btn btn-primary" type="button">Start Your Adventure</button>
     </div>
   </header>
 
