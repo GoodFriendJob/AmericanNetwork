@@ -11,10 +11,6 @@ setAppStage(params.get("stage") === "profile" ? "profile" : "main");
 const primaryViewSelect = document.getElementById("primary-view-select");
 
 function setView(view) {
-  document.querySelectorAll(".main-nav .nav-link[data-view]").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.view === view);
-  });
-
   if (primaryViewSelect) {
     primaryViewSelect.value = view;
   }
@@ -23,17 +19,9 @@ function setView(view) {
     if (el === appShell || el === profileShell) return;
     const elView = el.getAttribute("data-view");
     if (!elView) return;
-    el.style.display = elView === view ? "" : (view === "general" && elView === "general" ? "" : "none");
+    el.style.display = elView === view ? "" : "none";
   });
 }
-
-document.querySelectorAll(".main-nav .nav-link[data-view]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const view = btn.dataset.view || "general";
-    setAppStage("main");
-    setView(view);
-  });
-});
 
 if (primaryViewSelect) {
   primaryViewSelect.addEventListener("change", (event) => {
