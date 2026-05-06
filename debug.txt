@@ -1,0 +1,11 @@
+Array
+(
+    [first_name] => Luz Digna 
+    [last_name] => Garferio
+    [username] => luzglobaldigitalbusiness
+    [email] => jluzdigna@yahoo.com
+    [password] => Lu994061969@$
+    [confirm_password] => Lu994061969@$
+    [city] => Key Largo
+    [state] => FL
+)
