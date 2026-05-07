@@ -4,6 +4,10 @@ if (!isset($_SESSION["user_id"])) {
     header("Location: login.html");
     exit;
 }
+$__app_base = rtrim(str_replace("\\", "/", dirname($_SERVER["SCRIPT_NAME"] ?? "")), "/");
+if ($__app_base === "." || $__app_base === "/") {
+    $__app_base = "";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -60,12 +64,12 @@ if (!isset($_SESSION["user_id"])) {
         </div>
 
         <h2 id="profileName" class="profile-name">Loading...</h2>
-        <p id="profileHandle" class="profile-handle">@loading</p>
+        <a id="profileHandle" class="profile-handle" href="#">@loading</a>
 
-        <p id="profileSport" class="profile-role">Sport — Class of ???</p>
+        <p id="profileSport" class="profile-role">Sport — Position not set</p>
 
         <p class="profile-location">
-            Hometown: <span id="profileLocation">Loading...</span>
+            From: <span id="profileLocation">Loading...</span>
         </p>
 
         <div class="profile-stats">
@@ -87,6 +91,8 @@ if (!isset($_SESSION["user_id"])) {
             Loading bio...
         </p>
 
+        <p id="profileGoals" class="profile-goals" hidden></p>
+
         <div class="achievements">
             <h4>Achievements</h4>
             <p>Likes: <span id="badgeLikes">0</span></p>
@@ -105,32 +111,52 @@ if (!isset($_SESSION["user_id"])) {
 
         <form id="profile-form">
 
-            <label>First Name</label>
-            <input type="text" id="profile-name" placeholder="First Name">
+            <p id="profile-form-error" class="profile-form-error" style="display:none;"></p>
 
-            <label>Handle</label>
-            <input type="text" id="profile-handle" placeholder="@username">
+            <div class="profile-row">
+                <div>
+                    <label for="profile-first-name">First name</label>
+                    <input type="text" id="profile-first-name" name="first_name" placeholder="First name" required>
+                </div>
+                <div>
+                    <label for="profile-last-name">Last name</label>
+                    <input type="text" id="profile-last-name" name="last_name" placeholder="Last name">
+                </div>
+            </div>
 
-            <label>Sport</label>
-            <input type="text" id="profile-role" placeholder="Football, Basketball, etc.">
+            <label for="profile-username">Username</label>
+            <input type="text" id="profile-username" name="username" placeholder="username (appears as @username)" required autocomplete="username">
 
-            <label>Bio</label>
-            <textarea id="profile-bio" placeholder="Tell us about yourself"></textarea>
+            <label for="profile-sport">Sport</label>
+            <input type="text" id="profile-sport" name="sport" placeholder="Football, basketball, etc.">
 
-            <label>City</label>
-            <input type="text" id="profile-city" placeholder="City">
+            <label for="profile-position">Position</label>
+            <input type="text" id="profile-position" name="position" placeholder="e.g. WR, Point guard">
 
-            <label>State</label>
-            <input type="text" id="profile-state" placeholder="State">
+            <div class="profile-row">
+                <div>
+                    <label for="profile-city">City</label>
+                    <input type="text" id="profile-city" name="city" placeholder="City">
+                </div>
+                <div>
+                    <label for="profile-state">State</label>
+                    <input type="text" id="profile-state" name="state" placeholder="State">
+                </div>
+            </div>
 
-            <label>Zip</label>
-            <input type="text" id="profile-zip" placeholder="Zip Code">
+            <label for="profile-bio">Bio</label>
+            <textarea id="profile-bio" name="bio" placeholder="Tell us about yourself"></textarea>
 
-            <label>Achievements</label>
-            <textarea id="profile-achievements" placeholder="List your achievements"></textarea>
+            <label for="profile-rating">Rating (0–10)</label>
+            <input type="number" id="profile-rating" name="rating" min="0" max="10" step="0.1" placeholder="0.0">
 
-            <button type="submit" class="save-profile-btn">Save Profile</button>
-            <button type="button" class="cancel-profile-btn" onclick="setAppStage('main')">Cancel</button>
+            <label for="profile-goals-input">Goals</label>
+            <textarea id="profile-goals-input" name="goals" placeholder="Your athletic or season goals"></textarea>
+
+            <div class="profile-form-actions">
+                <button type="submit" class="save-profile-btn">Save profile</button>
+                <button type="button" class="cancel-profile-btn" onclick="setAppStage('main')">Cancel</button>
+            </div>
 
         </form>
 
@@ -183,9 +209,9 @@ if (!isset($_SESSION["user_id"])) {
                     <span class="post-tag">Friday Night Lights</span>
                 </header>
 
-                <p class="post-caption">
+                <p class="post-caption js-link-mentions">
                     Corner route, 4th & goal. Trusted the work, trusted the QB.
-                    All American moments are built on days like this.
+                    Shoutout to @charles_test for the scout notes. All American moments are built on days like this.
                 </p>
 
                 <div class="post-media-wrapper">
@@ -210,8 +236,8 @@ if (!isset($_SESSION["user_id"])) {
                         <div class="avatar-small">SC</div>
                         <div>
                             <p class="comment-author">Scout Central</p>
-                            <p class="comment-text">
-                                Route discipline, separation, and hands. This is what we look for on Saturdays.
+                            <p class="comment-text js-link-mentions">
+                                Route discipline, separation, and hands. Ask @fletch if you want a second look.
                             </p>
                         </div>
                     </div>
@@ -261,7 +287,8 @@ if (!isset($_SESSION["user_id"])) {
 
 </div> <!-- end layout -->
 </div>  <!-- end app-shell -->
-<script src="/assets/js/main.js"></script>
+<script>window.__APP_BASE__ = <?= json_encode($__app_base, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script src="assets/js/main.js"></script>
 
 </body>
 </html>

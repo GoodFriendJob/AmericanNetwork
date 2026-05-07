@@ -1,9 +1,42 @@
 const appShell = document.querySelector('.app-shell[data-view="main"]');
 const profileShell = document.querySelector('.profile-shell[data-view="profile"]');
 
+/** Application root path, e.g. /AmericanNetwork (set in app.php) */
+function appUrl(relPath) {
+  const base = (window.__APP_BASE__ || "").replace(/\/$/, "");
+  const path = String(relPath).replace(/^\//, "");
+  return base ? `${base}/${path}` : `/${path}`;
+}
+
+let sidebarUserCache = null;
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function hydrateMentions() {
+  document.querySelectorAll(".js-link-mentions").forEach((el) => {
+    const text = el.textContent;
+    if (!/@\S/.test(text)) return;
+    el.innerHTML = escapeHtml(text).replace(/@([^\s@]+)/g, (_, user) => {
+      const href = appUrl(`profile.php?u=${encodeURIComponent(user)}`);
+      return `<a href="${escapeHtml(href)}" class="mention-link">@${escapeHtml(user)}</a>`;
+    });
+  });
+}
+
 function setAppStage(stage) {
-  if (appShell) appShell.style.display = stage === "main" ? "block" : "none";
-  if (profileShell) profileShell.style.display = stage === "profile" ? "block" : "none";
+  /* Keep `.app-shell` visible: profile UI lives inside it. When editing, collapse feed columns. */
+  if (appShell) appShell.style.display = "block";
+  const isProfile = stage === "profile";
+  if (profileShell) profileShell.style.display = isProfile ? "block" : "none";
+  document.querySelector(".sidebar-left")?.style.setProperty("display", isProfile ? "none" : "");
+  document.querySelector(".center-feed")?.style.setProperty("display", isProfile ? "none" : "");
+  document.querySelector(".sidebar-right")?.style.setProperty("display", isProfile ? "none" : "");
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -32,61 +65,84 @@ if (primaryViewSelect) {
 }
 setView("general");
 
+function populateProfileForm(u) {
+  const setVal = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v ?? "";
+  };
+  setVal("profile-first-name", u.first_name || "");
+  setVal("profile-last-name", u.last_name || "");
+  setVal("profile-username", u.username || "");
+  setVal("profile-sport", u.sport || "");
+  setVal("profile-position", u.position || "");
+  setVal("profile-city", u.city || "");
+  setVal("profile-state", u.state || "");
+  setVal("profile-bio", u.bio || "");
+  setVal("profile-goals-input", u.goals || "");
+  const r =
+    u.rating !== undefined && u.rating !== null && u.rating !== ""
+      ? String(u.rating)
+      : "";
+  setVal("profile-rating", r);
+}
+
 const profileForm = document.getElementById("profile-form");
+const profileFormError = document.getElementById("profile-form-error");
+
 if (profileForm) {
-  profileForm.addEventListener("submit", (event) => {
+  profileForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const name = document.getElementById("profile-name").value.trim();
-    const handle = document.getElementById("profile-handle").value.trim();
-    const role = document.getElementById("profile-role").value;
-    const bio = document.getElementById("profile-bio").value.trim();
-    const city = document.getElementById("profile-city").value.trim();
-    const state = document.getElementById("profile-state").value.trim();
-    const zip = document.getElementById("profile-zip").value.trim();
-    const achievements = document.getElementById("profile-achievements").value.trim();
-    if (!name || !handle || !role || !bio) return;
-
-    const profileNameEl = document.querySelector(".profile-name");
-    const profileHandleEl = document.querySelector(".profile-handle");
-    const profileRoleEl = document.querySelector(".profile-role");
-    const profileBioEl = document.querySelector(".profile-bio");
-    const profileLocationEl = document.getElementById("profile-location-display");
-    const profileAchievementsEl = document.getElementById("profile-achievements-display");
-
-    if (profileNameEl) profileNameEl.textContent = name;
-    if (profileHandleEl) profileHandleEl.textContent = handle;
-    if (profileBioEl) profileBioEl.textContent = bio;
-
-    if (profileRoleEl) {
-      const laneMap = {
-        sports: "All American in Sports",
-        video: "All American Video Maker",
-        dating: "All American Dating",
-        truth: "All American Truth Teller",
-        business: "All American in Business",
-      };
-      profileRoleEl.textContent = laneMap[role] || "All American";
+    if (profileFormError) {
+      profileFormError.style.display = "none";
+      profileFormError.textContent = "";
     }
 
-    if (profileLocationEl) {
-      const parts = [];
-      if (city) parts.push(city);
-      if (state) parts.push(state);
-      profileLocationEl.textContent = zip ? `${parts.join(", ")} ${zip}` : parts.join(", ") || "Hometown not set yet";
-    }
+    const payload = {
+      first_name: document.getElementById("profile-first-name")?.value.trim() ?? "",
+      last_name: document.getElementById("profile-last-name")?.value.trim() ?? "",
+      username: document.getElementById("profile-username")?.value.trim() ?? "",
+      sport: document.getElementById("profile-sport")?.value.trim() ?? "",
+      position: document.getElementById("profile-position")?.value.trim() ?? "",
+      city: document.getElementById("profile-city")?.value.trim() ?? "",
+      state: document.getElementById("profile-state")?.value.trim() ?? "",
+      bio: document.getElementById("profile-bio")?.value.trim() ?? "",
+      goals: document.getElementById("profile-goals-input")?.value.trim() ?? "",
+      rating: document.getElementById("profile-rating")?.value ?? "",
+    };
 
-    if (profileAchievementsEl) {
-      profileAchievementsEl.innerHTML = achievements
-        ? `<h3 class="profile-achievements-title">Achievements</h3><p class="profile-achievements-list">${achievements}</p>`
-        : `<h3 class="profile-achievements-title">Achievements</h3><p class="profile-achievements-empty">No achievements added yet.</p>`;
+    try {
+      const res = await fetch(appUrl("app/update_profile.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        if (profileFormError) {
+          profileFormError.textContent = data.message || "Could not save profile.";
+          profileFormError.style.display = "";
+        }
+        return;
+      }
+      await loadSidebarProfile();
+      setAppStage("main");
+    } catch (err) {
+      console.error(err);
+      if (profileFormError) {
+        profileFormError.textContent = "Network error while saving.";
+        profileFormError.style.display = "";
+      }
     }
-
-    setAppStage("main");
   });
 }
 
 const editProfileBtn = document.getElementById("btn-edit-profile");
-if (editProfileBtn) editProfileBtn.addEventListener("click", () => setAppStage("profile"));
+if (editProfileBtn)
+  editProfileBtn.addEventListener("click", async () => {
+    await loadSidebarProfile();
+    if (sidebarUserCache) populateProfileForm(sidebarUserCache);
+    setAppStage("profile");
+  });
 
 const avatarInput = document.getElementById("profile-avatar-input");
 const avatarDisplay = document.getElementById("profile-avatar");
@@ -266,40 +322,77 @@ setupRevealObserver();
 // LOAD LEFT SIDEBAR DATA
 // =====================
 
-document.addEventListener("DOMContentLoaded", loadSidebarProfile);
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadSidebarProfile();
+  hydrateMentions();
+});
 
 async function loadSidebarProfile() {
-    try {
-        const res = await fetch('/appaaa/me.php');
-        const data = await res.json();
+  try {
+    const res = await fetch(appUrl("app/me.php"));
+    const data = await res.json();
 
-        if (!data.success) {
-            console.warn("User not logged in");
-            return;
-        }
-
-        const u = data.user;
-
-        // LEFT SIDEBAR FIELDS
-        const profilePic = document.getElementById('profilePic');
-        const profileName = document.getElementById('profileName');
-        const profileHandle = document.getElementById('profileHandle');
-        const profileSport = document.getElementById('profileSport');
-        const profileLocation = document.getElementById('profileLocation');
-        const profileBio = document.getElementById('profileBio');
-        const badgeLikes = document.getElementById('badgeLikes');
-
-        if (profilePic) profilePic.src = u.profile_pic || 'assets/img/default-avatar.png';
-        if (profileName) profileName.textContent = `${u.first_name} ${u.last_name}`;
-        if (profileHandle) profileHandle.textContent = '@' + u.username;
-        if (profileSport) profileSport.textContent = u.sport || 'Sport not set';
-        if (profileLocation) profileLocation.textContent =
-            (u.city && u.state) ? `${u.city}, ${u.state}` : 'Not set yet';
-        if (profileBio) profileBio.textContent = u.bio || 'No bio yet.';
-        if (badgeLikes) badgeLikes.textContent = u.likes || 0;
-
-    } catch (err) {
-        console.error("Sidebar load error:", err);
+    if (!data.success) {
+      console.warn("Sidebar profile:", data.message || "failed");
+      return;
     }
+
+    const u = data.user;
+    sidebarUserCache = u;
+
+    const profilePic = document.getElementById("profilePic");
+    const profileName = document.getElementById("profileName");
+    const profileHandle = document.getElementById("profileHandle");
+    const profileSport = document.getElementById("profileSport");
+    const profileLocation = document.getElementById("profileLocation");
+    const profileBio = document.getElementById("profileBio");
+    const profileGoals = document.getElementById("profileGoals");
+    const badgeLikes = document.getElementById("badgeLikes");
+    const statHighlights = document.getElementById("statHighlights");
+    const statScouts = document.getElementById("statScouts");
+    const statRating = document.getElementById("statRating");
+
+    const displayName = [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || u.username || "Member";
+
+    if (profilePic) profilePic.src = u.profile_pic || "assets/img/charles.jpg";
+    if (profileName) profileName.textContent = displayName;
+
+    if (profileHandle && u.username) {
+      profileHandle.textContent = "@" + u.username;
+      profileHandle.href = appUrl(`profile.php?u=${encodeURIComponent(u.username)}`);
+    }
+
+    const sportTxt = u.sport && String(u.sport).trim() ? u.sport : "Sport not set";
+    const posTxt = u.position && String(u.position).trim() ? u.position : "Position not set";
+    if (profileSport) profileSport.textContent = `${sportTxt} — ${posTxt}`;
+
+    if (profileLocation) {
+      profileLocation.textContent =
+        u.city || u.state
+          ? [u.city, u.state].filter(Boolean).join(", ")
+          : "Not set yet";
+    }
+
+    if (profileBio) profileBio.textContent = u.bio && String(u.bio).trim() ? u.bio : "No bio yet.";
+
+    if (profileGoals) {
+      const g = u.goals && String(u.goals).trim();
+      if (g) {
+        profileGoals.innerHTML = "<strong>Goals:</strong> " + escapeHtml(g).replace(/\n/g, "<br>");
+        profileGoals.hidden = false;
+      } else {
+        profileGoals.textContent = "";
+        profileGoals.hidden = true;
+      }
+    }
+
+    if (badgeLikes) badgeLikes.textContent = u.likes ?? 0;
+    if (statHighlights) statHighlights.textContent = String(u.num_highlights ?? 0);
+    if (statScouts) statScouts.textContent = String(u.num_saved_posts ?? 0);
+    const ratingNum = u.rating !== undefined && u.rating !== null ? Number(u.rating) : 0;
+    if (statRating) statRating.textContent = Number.isFinite(ratingNum) ? ratingNum.toFixed(1) : "0.0";
+  } catch (err) {
+    console.error("Sidebar load error:", err);
+  }
 }
 
