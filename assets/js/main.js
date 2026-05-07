@@ -79,15 +79,52 @@ function populateProfileForm(u) {
   setVal("profile-state", u.state || "");
   setVal("profile-bio", u.bio || "");
   setVal("profile-goals-input", u.goals || "");
-  const r =
-    u.rating !== undefined && u.rating !== null && u.rating !== ""
-      ? String(u.rating)
-      : "";
-  setVal("profile-rating", r);
+
+  const picPreview = document.getElementById("profile-picture-preview");
+  const picInput = document.getElementById("profile-picture");
+  const removePic = document.getElementById("profile-remove-picture");
+  if (picPreview) picPreview.src = u.profile_pic || "assets/img/charles.jpg";
+  if (picInput) picInput.value = "";
+  if (removePic) removePic.checked = false;
 }
 
 const profileForm = document.getElementById("profile-form");
 const profileFormError = document.getElementById("profile-form-error");
+const profilePictureInput = document.getElementById("profile-picture");
+const profilePicturePreview = document.getElementById("profile-picture-preview");
+const profileRemovePicture = document.getElementById("profile-remove-picture");
+
+if (profilePictureInput && profilePicturePreview) {
+  profilePictureInput.addEventListener("change", (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) {
+      if (sidebarUserCache?.profile_pic) {
+        profilePicturePreview.src = sidebarUserCache.profile_pic;
+      } else {
+        profilePicturePreview.src = "assets/img/charles.jpg";
+      }
+      return;
+    }
+    if (profileRemovePicture) profileRemovePicture.checked = false;
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      profilePicturePreview.src = e.target?.result || "assets/img/charles.jpg";
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+if (profileRemovePicture && profilePicturePreview) {
+  profileRemovePicture.addEventListener("change", () => {
+    if (profileRemovePicture.checked) {
+      profilePicturePreview.src = "assets/img/charles.jpg";
+      if (profilePictureInput) profilePictureInput.value = "";
+    } else if (sidebarUserCache?.profile_pic) {
+      profilePicturePreview.src = sidebarUserCache.profile_pic;
+    }
+  });
+}
 
 if (profileForm) {
   profileForm.addEventListener("submit", async (event) => {
@@ -107,14 +144,20 @@ if (profileForm) {
       state: document.getElementById("profile-state")?.value.trim() ?? "",
       bio: document.getElementById("profile-bio")?.value.trim() ?? "",
       goals: document.getElementById("profile-goals-input")?.value.trim() ?? "",
-      rating: document.getElementById("profile-rating")?.value ?? "",
+      remove_picture: document.getElementById("profile-remove-picture")?.checked ? "1" : "0",
     };
+
+    const formData = new FormData();
+    Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
+    const pictureFile = profilePictureInput?.files && profilePictureInput.files[0];
+    if (pictureFile) {
+      formData.append("profile_picture", pictureFile);
+    }
 
     try {
       const res = await fetch(appUrl("app/update_profile.php"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const data = await res.json();
       if (!data.success) {
@@ -143,38 +186,6 @@ if (editProfileBtn)
     if (sidebarUserCache) populateProfileForm(sidebarUserCache);
     setAppStage("profile");
   });
-
-const avatarInput = document.getElementById("profile-avatar-input");
-const avatarDisplay = document.getElementById("profile-avatar");
-const defaultAvatarSrc = "https://randomuser.me/api/portraits/men/32.jpg";
-
-function applyAvatarImage(imageSrc) {
-  if (!avatarDisplay) return;
-  avatarDisplay.style.backgroundImage = `url("${imageSrc}")`;
-  avatarDisplay.textContent = "";
-  avatarDisplay.classList.add("has-image");
-}
-
-function applyDefaultAvatar() {
-  applyAvatarImage(defaultAvatarSrc);
-}
-
-if (avatarInput && avatarDisplay) {
-  applyDefaultAvatar();
-
-  avatarInput.addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file || !file.type.startsWith("image/")) {
-      applyDefaultAvatar();
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      applyAvatarImage(ev.target.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 const generalTabs = document.querySelectorAll(".general-tab");
 generalTabs.forEach((tab) => {

@@ -9,23 +9,18 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$data = json_decode(file_get_contents("php://input"), true);
-if (!is_array($data)) {
-    echo json_encode(["success" => false, "message" => "Invalid JSON"]);
-    exit;
-}
+$user_id = (int) $_SESSION["user_id"];
 
-$first_name = trim($data["first_name"] ?? "");
-$last_name  = trim($data["last_name"] ?? "");
-$username   = trim($data["username"] ?? "");
-$username   = ltrim($username, "@");
-$city       = trim($data["city"] ?? "");
-$state      = trim($data["state"] ?? "");
-$sport      = trim($data["sport"] ?? "");
-$position   = trim($data["position"] ?? "");
-$bio        = trim($data["bio"] ?? "");
-$goals      = trim($data["goals"] ?? "");
-$ratingRaw  = $data["rating"] ?? null;
+$first_name = trim($_POST["first_name"] ?? "");
+$last_name  = trim($_POST["last_name"] ?? "");
+$username   = ltrim(trim($_POST["username"] ?? ""), "@");
+$city       = trim($_POST["city"] ?? "");
+$state      = trim($_POST["state"] ?? "");
+$sport      = trim($_POST["sport"] ?? "");
+$position   = trim($_POST["position"] ?? "");
+$bio        = trim($_POST["bio"] ?? "");
+$goals      = trim($_POST["goals"] ?? "");
+$remove_pic = ($_POST["remove_picture"] ?? "0") === "1";
 
 if ($first_name === "") {
     echo json_encode(["success" => false, "message" => "First name is required."]);
@@ -37,31 +32,70 @@ if ($username === "") {
     exit;
 }
 
-if (strlen($username) > 50) {
-    echo json_encode(["success" => false, "message" => "Username is too long (max 50 characters)."]);
+if (!preg_match('/^[A-Za-z0-9._-]{3,50}$/', $username)) {
+    echo json_encode(["success" => false, "message" => "Username must be 3-50 characters using letters, numbers, dot, dash, or underscore."]);
     exit;
 }
-
-$rating = null;
-if ($ratingRaw === "" || $ratingRaw === null) {
-    $rating = 0.0;
-} else {
-    $rating = (float) $ratingRaw;
-    if ($rating < 0) {
-        $rating = 0.0;
-    }
-    if ($rating > 10) {
-        $rating = 10.0;
-    }
-}
-
-$user_id = (int) $_SESSION["user_id"];
 
 $dup = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id <> ?");
 $dup->execute([$username, $user_id]);
 if ($dup->fetch()) {
     echo json_encode(["success" => false, "message" => "That username is already taken."]);
     exit;
+}
+
+$currentStmt = $pdo->prepare("SELECT profile_pic FROM users WHERE id = ?");
+$currentStmt->execute([$user_id]);
+$currentProfilePic = (string) ($currentStmt->fetchColumn() ?: "");
+
+$newProfilePic = $currentProfilePic;
+$removeCurrentPic = false;
+
+if ($remove_pic) {
+    $newProfilePic = null;
+    $removeCurrentPic = true;
+}
+
+if (!empty($_FILES["profile_picture"]) && (int) $_FILES["profile_picture"]["error"] !== UPLOAD_ERR_NO_FILE) {
+    if ((int) $_FILES["profile_picture"]["error"] !== UPLOAD_ERR_OK) {
+        echo json_encode(["success" => false, "message" => "Profile picture upload failed."]);
+        exit;
+    }
+
+    $tmp = $_FILES["profile_picture"]["tmp_name"];
+    $size = (int) ($_FILES["profile_picture"]["size"] ?? 0);
+    if ($size > 5 * 1024 * 1024) {
+        echo json_encode(["success" => false, "message" => "Profile picture must be 5MB or smaller."]);
+        exit;
+    }
+
+    $mime = mime_content_type($tmp) ?: "";
+    $allowed = [
+        "image/jpeg" => "jpg",
+        "image/png" => "png",
+        "image/gif" => "gif",
+        "image/webp" => "webp",
+    ];
+    if (!isset($allowed[$mime])) {
+        echo json_encode(["success" => false, "message" => "Only JPG, PNG, GIF, and WEBP images are allowed."]);
+        exit;
+    }
+
+    $uploadDir = dirname(__DIR__) . "/uploads/profile_pics";
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
+        echo json_encode(["success" => false, "message" => "Failed to prepare upload folder."]);
+        exit;
+    }
+
+    $filename = "profile_" . $user_id . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $allowed[$mime];
+    $target = $uploadDir . "/" . $filename;
+    if (!move_uploaded_file($tmp, $target)) {
+        echo json_encode(["success" => false, "message" => "Failed to save profile picture."]);
+        exit;
+    }
+
+    $newProfilePic = "uploads/profile_pics/" . $filename;
+    $removeCurrentPic = true;
 }
 
 $stmt = $pdo->prepare("
@@ -75,7 +109,7 @@ $stmt = $pdo->prepare("
         position = ?,
         bio = ?,
         goals = ?,
-        rating = ?
+        profile_pic = ?
     WHERE id = ?
 ");
 
@@ -90,7 +124,7 @@ try {
         $position,
         $bio,
         $goals,
-        $rating,
+        $newProfilePic,
         $user_id,
     ]);
 } catch (PDOException $e) {
@@ -99,6 +133,13 @@ try {
         exit;
     }
     throw $e;
+}
+
+if ($ok && $removeCurrentPic && strpos($currentProfilePic, "uploads/profile_pics/") === 0) {
+    $old = dirname(__DIR__) . "/" . $currentProfilePic;
+    if (is_file($old)) {
+        @unlink($old);
+    }
 }
 
 echo json_encode([

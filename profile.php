@@ -29,8 +29,8 @@ $stmt = $pdo->prepare("
            u.position,
            u.bio,
            u.goals,
-           u.rating,
            u.profile_pic,
+           (SELECT AVG(NULLIF(p.rating, 0)) FROM posts p WHERE p.user_id = u.id) AS community_rating,
            (SELECT COUNT(*) FROM highlights h WHERE h.user_id = u.id) AS num_highlights,
            (SELECT COUNT(*) FROM saved_posts s WHERE s.user_id = u.id) AS num_saved_posts
     FROM users u
@@ -77,7 +77,7 @@ if (!empty($profile["city"]) || !empty($profile["state"])) {
 }
 
 $pfp = $profile["profile_pic"] ? $h($profile["profile_pic"]) : "assets/img/charles.jpg";
-$ratingVal = $profile["rating"] !== null ? number_format((float) $profile["rating"], 1) : "0.0";
+$ratingVal = $profile["community_rating"] !== null ? number_format((float) $profile["community_rating"], 1) : "0.0";
 $hl = (int) ($profile["num_highlights"] ?? 0);
 $sv = (int) ($profile["num_saved_posts"] ?? 0);
 

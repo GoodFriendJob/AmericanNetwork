@@ -336,6 +336,25 @@ a.profile-handle:hover {
     resize: vertical;
 }
 
+.profile-picture-preview {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: 10px;
+    border: 2px solid #2b3a6a;
+    background: #0b1024;
+}
+
+.profile-remove-pic-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
 .profile-row {
     display: grid;
     grid-template-columns: 1fr 1fr;

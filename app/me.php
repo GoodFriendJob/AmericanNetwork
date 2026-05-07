@@ -23,9 +23,9 @@ $stmt = $pdo->prepare("
            u.position,
            u.bio,
            u.goals,
-           u.rating,
            u.profile_pic,
            COALESCE(b.likes, 0) AS likes,
+           (SELECT AVG(NULLIF(p.rating, 0)) FROM posts p WHERE p.user_id = u.id) AS community_rating,
            (SELECT COUNT(*) FROM highlights h WHERE h.user_id = u.id) AS num_highlights,
            (SELECT COUNT(*) FROM saved_posts s WHERE s.user_id = u.id) AS num_saved_posts
     FROM users u
@@ -40,7 +40,9 @@ if (!$user) {
     exit;
 }
 
-$user['rating'] = $user['rating'] !== null ? (float) $user['rating'] : 0.0;
+$user['rating'] = $user['community_rating'] !== null ? (float) $user['community_rating'] : 0.0;
+$user['rating'] = round($user['rating'], 1);
+unset($user['community_rating']);
 $user['num_highlights'] = (int) ($user['num_highlights'] ?? 0);
 $user['num_saved_posts'] = (int) ($user['num_saved_posts'] ?? 0);
 

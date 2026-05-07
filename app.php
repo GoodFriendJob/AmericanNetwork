@@ -147,8 +147,13 @@ if ($__app_base === "." || $__app_base === "/") {
             <label for="profile-bio">Bio</label>
             <textarea id="profile-bio" name="bio" placeholder="Tell us about yourself"></textarea>
 
-            <label for="profile-rating">Rating (0–10)</label>
-            <input type="number" id="profile-rating" name="rating" min="0" max="10" step="0.1" placeholder="0.0">
+            <label for="profile-picture">Profile picture</label>
+            <input type="file" id="profile-picture" name="profile_picture" accept="image/*">
+            <img id="profile-picture-preview" class="profile-picture-preview" src="assets/img/charles.jpg" alt="Profile picture preview">
+            <label class="profile-remove-pic-label" for="profile-remove-picture">
+                <input type="checkbox" id="profile-remove-picture" name="remove_picture" value="1">
+                Remove current profile picture
+            </label>
 
             <label for="profile-goals-input">Goals</label>
             <textarea id="profile-goals-input" name="goals" placeholder="Your athletic or season goals"></textarea>
